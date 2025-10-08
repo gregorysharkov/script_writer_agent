@@ -45,8 +45,15 @@ class ChannelInfo:
 
 @dataclass
 class ScriptWriterAgentConfig:
+    """Configuration for the script writer agent"""
+
     main_model: str = "gemini-2.5-flash"
-    max_research_iterations: int = 3
+    max_research_iterations: int = (
+        1  # Number of retry attempts for researcher (1 = no retries, just one attempt)
+    )
+    max_search_queries: int = (
+        6  # Maximum number of search queries per research session (4-6 recommended)
+    )
     channel_info: ChannelInfo = field(default_factory=ChannelInfo)
 
 
