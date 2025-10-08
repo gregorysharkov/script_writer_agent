@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "script_writer_agent"
+version = "0.1.0"
+description = "AI-powered YouTube script writing agent with multi-agent workflow"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Grigory Sharkov"},
+]
+dependencies = [
+    "google-adk~=1.4.2",
+    "jupyter~=1.0.0",
+    "python-dotenv~=1.0.0",
+    "litellm~=1.72.9",
+    "google-generativeai~=0.8.5",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pylint",
+    "black",
+    "isort",
+]
+
+[tool.pylint.main]
+# Maximum number of characters on a single line
+max-line-length = 200
+
+[tool.pylint.messages_control]
+# Disable specific warnings
+disable = [
+    "C0114",  # missing-module-docstring
+]
+
+[tool.pylint.format]
+# Maximum number of characters on a single line
+max-line-length = 200
+
+[tool.black]
+line-length = 200
+target-version = ["py38", "py39", "py310", "py311", "py313"]
+
+[tool.isort]
+profile = "black"
+line_length = 200
+
