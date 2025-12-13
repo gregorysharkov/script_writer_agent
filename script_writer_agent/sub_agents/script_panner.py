@@ -13,7 +13,23 @@ it should include the following sections:
 - Main message
 - 3-5 key points/roadmap
 
-Use Google Search to find relevant information and examples to support your work.
+## Research Integration
+
+Check for research_findings in the context. If available, incorporate insights and findings into your outline.
+
+If you need additional factual information while planning (research papers, statistics, technical claims, recent developments), you can request deep-dive research by clearly stating:
+"I need more information about [specific topic/paper/claim] to complete this section accurately."
+
+The coordinator will call the researcher with your specific query and provide targeted findings.
+
+**When to Request Deep-Dive Research:**
+- Citing specific research papers or studies (e.g., "I need details about the Transformer architecture paper")
+- Making technical claims that need verification (e.g., "I need to verify performance claims about technology X")
+- Referencing statistics or data points (e.g., "I need current adoption statistics for technology Y")
+- Discussing recent developments or trends (e.g., "I need latest information about trend Z in 2025")
+- Complex technical concepts that need accurate explanation
+
+Use Google Search for general information and examples to support your work.
 Your outline should be in markdown format.
 
 The outline guidelines:

@@ -37,7 +37,6 @@ class ChannelInfo:
     )
     call_to_action_style: str = "Event the best performing model is worth nothing until put into production."  # How to end videos, what to ask viewers
     engagement_preferences: str = ""  # How to interact with audience
-
     # Technical Preferences
     visual_style_notes: str = ""  # Preferences for visuals, graphics, etc.
     production_constraints: str = ""  # Equipment, budget, time constraints
