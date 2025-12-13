@@ -1,0 +1,38 @@
+# Pragmatic Content Factory - Dependencies
+# ==========================================
+
+# Google ADK for Agent Framework
+google-adk>=0.3.0
+
+# LLM Providers
+google-generativeai>=0.8.0
+openai>=1.50.0
+
+# Vector Store - Pinecone for RAG
+pinecone-client>=3.0.0
+
+# Graph Database - Neo4j for Knowledge Graph
+neo4j>=5.20.0
+
+# Data Validation
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Embeddings
+tiktoken>=0.7.0
+
+# Document Processing
+pypdf>=4.0.0
+python-docx>=1.1.0
+markdown>=3.5.0
+
+# Environment & Configuration
+python-dotenv>=1.0.0
+
+# Utilities
+tenacity>=8.2.0  # Retry logic
+structlog>=24.1.0  # Structured logging
+
+# Development & Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
