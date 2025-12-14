@@ -8,8 +8,8 @@ google-adk>=0.3.0
 google-generativeai>=0.8.0
 openai>=1.50.0
 
-# Vector Store - Pinecone for RAG
-pinecone-client>=3.0.0
+# Vector Store - FAISS for RAG (with disk persistence)
+faiss-cpu>=1.8.0
 
 # Graph Database - Neo4j for Knowledge Graph
 neo4j>=5.20.0

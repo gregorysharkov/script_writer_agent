@@ -150,9 +150,15 @@ logs/
 temp/
 tmp/
 
+# Pragmatic Content Factory - Persisted Data
+pragmatic_content_factory/data/faiss_index/
+pragmatic_content_factory/data/neo4j_data/
+pragmatic_content_factory/data/neo4j_logs/
+
 # API keys and secrets (extra safety)
 *.key
 *.pem
 secrets.json
 credentials.json
 
+.cursor/

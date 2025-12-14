@@ -47,10 +47,31 @@ The system must use a two-layer memory architecture, where each layer performs i
 * **Sequence:** `Input` → `Analyst` → `Writer` ↔ `Critic` → `Final Script` → `Atomizer` → `Social Posts`.
 * **Requirement:** **Writer** cannot receive approval until **Critic** marks **Pass** on all key metrics (Tonal Score, Hype-Level, Latency-Check).
 
-#### 2. Learning Loop (The Learning Loop)
-* **Trigger Source:** User feedback (`User / Grigory`).
+#### 2. Human-in-the-Loop Checkpoints
+* **Purpose:** Allow user to review, provide feedback, and correct course at key stages before proceeding.
+* **Checkpoint Locations:**
+    * **CP1 (Brief Review):** After **Deep Analyst** produces Content Brief
+    * **CP2 (Draft Review):** After **Voice Architect** produces Draft Script
+    * **CP3 (Final Review):** After **Ruthless Critic** approves Final Script
+* **Available Actions at Each Checkpoint:**
+    | Action | Description | Effect |
+    | :--- | :--- | :--- |
+    | **Proceed** | Approve output, continue to next stage | Advance pipeline |
+    | **Revise** | Re-run current stage with specific feedback | Same stage with feedback context |
+    | **Go Back** | Return to previous stage | Re-run earlier stage (invalidates downstream artifacts) |
+    | **Update Preferences** | Invoke Librarian to update memory | Librarian updates RAG/KG, then Revise or Go Back |
+* **Go Back Constraints:**
+    * CP1 → Cannot go back (first stage)
+    * CP2 → Can go back to Analyst
+    * CP3 → Can go back to Writer or Analyst
+* **Iteration Limits:** Maximum 3 attempts per stage to prevent infinite loops.
+* **Context Propagation:** When going back, feedback from later stages should be passed to inform earlier stage re-runs.
+
+#### 3. Learning Loop (The Learning Loop)
+* **Trigger Source:** User feedback (`User / Grigory`) at any checkpoint via "Update Preferences" action.
 * **Path:** `User Feedback` → **Librarian** → `RAG (Dynamic Docs)` + `Knowledge Graph`.
 * **Requirement:** **Librarian** must have a prioritization mechanism: manual "Taboo" corrections have the highest priority and immediately enter RAG for immediate use by **Critic** in the next cycle.
+* **In-Flow Updates:** Unlike end-of-pipeline feedback, checkpoint-triggered Librarian updates affect the *current* content generation run.
 
 #### 3. Formatting and Code
 * **Language:** The main code must be written in Python.
