@@ -151,7 +151,11 @@ temp/
 tmp/
 
 # Pragmatic Content Factory - Persisted Data
-pragmatic_content_factory/data/faiss_index/
+# FAISS index files (preserve directory structure, ignore only index files)
+pragmatic_content_factory/data/faiss_index/*.faiss
+pragmatic_content_factory/data/faiss_index/*.pkl
+pragmatic_content_factory/data/faiss_index/*.bin
+# Neo4j data (entire directories, managed by Docker volumes)
 pragmatic_content_factory/data/neo4j_data/
 pragmatic_content_factory/data/neo4j_logs/
 

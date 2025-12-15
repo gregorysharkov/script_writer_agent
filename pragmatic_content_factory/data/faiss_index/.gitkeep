@@ -1,0 +1,2 @@
+# This file preserves the faiss_index directory structure in git.
+# FAISS index files (*.faiss, *.pkl, *.bin) are gitignored but the directory is tracked.

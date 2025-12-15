@@ -73,6 +73,50 @@ The system must use a two-layer memory architecture, where each layer performs i
 * **Requirement:** **Librarian** must have a prioritization mechanism: manual "Taboo" corrections have the highest priority and immediately enter RAG for immediate use by **Critic** in the next cycle.
 * **In-Flow Updates:** Unlike end-of-pipeline feedback, checkpoint-triggered Librarian updates affect the *current* content generation run.
 
-#### 3. Formatting and Code
+#### 4. Formatting and Code
 * **Language:** The main code must be written in Python.
 * **Immutability:** Source documents must be accessible for reading but not for writing (Immutability). Only **Librarian** can make changes to derived dynamic documents (`taboo_list.md`) and the Knowledge Graph.
+
+### IV. Initial Setup Requirements
+
+The system requires one-time initialization of both memory layers before first use.
+
+#### 1. RAG Index Initialization
+* **Purpose:** Populate the FAISS vector index with brand DNA documents for retrieval.
+* **Documents to Index:**
+    * **Static Documents** (from `data/static/`): Brand passport, reader card, speech/text codes
+    * **Dynamic Documents** (from `data/dynamic/`): Initial taboo list and style guidelines
+* **Processing Requirements:**
+    * Extract text from PDF documents if documents are in any language than English, the text should be translated
+    * Chunk documents into semantic units (paragraphs or sections)
+    * Generate embeddings for each chunk
+    * Store with metadata (source document, chunk index, document type)
+    * Processing should be done in parallel with number of executors defined in a configuration file.
+
+#### 2. Knowledge Graph Seeding
+* **Purpose:** Populate Neo4j with initial worldview entities and relationships extracted from source content.
+* **Seed Data Source:** User-provided markdown file `data/seed/worldview.md` containing links to source content
+* **Source File Structure:**
+    * List of URLs to content that represents the brand worldview (blog posts, videos, podcasts, social posts)
+    * Optional metadata per link (title, type, priority)
+    * Organized by category if desired (opinions, technical stances, case studies)
+* **LLM Processing Pipeline:**
+    1. Fetch and parse content from each URL
+    2. LLM analyzes content to extract entities (tools, concepts, problems mentioned)
+    3. LLM identifies relationships and stances expressed in the content
+    4. LLM assigns confidence scores and extracts supporting quotes/context
+    5. Deduplicate and merge entities across multiple sources
+* **Entity Types to Extract:**
+    * **Person:** Brand persona (Grigory) - predefined
+    * **Tools:** Technologies mentioned with detected stance
+    * **Concepts:** Ideas and values discussed
+    * **Problems:** Pain points and issues raised
+* **Relationship Types to Extract:**
+    * Stance relationships: HATES, PREFERS, SKEPTICAL_OF, VALUES
+    * Causal relationships: CAUSES, ENABLES, SOLVES, LEADS_TO
+* **Output:** Structured entities and relationships loaded into Neo4j with source attribution
+
+#### 3. Setup Execution
+* **Idempotency:** Setup must be safe to re-run (skip existing data or offer force flag)
+* **Validation:** After setup, verify index contains expected document count and graph has expected node/relationship counts
+* **Prerequisites:** Neo4j container must be running before graph seeding

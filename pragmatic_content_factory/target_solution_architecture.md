@@ -368,6 +368,100 @@ services:
 - View logs: `docker-compose logs -f neo4j`
 - Browser UI: http://localhost:7474
 
+## Initial Setup
+
+Before first use, both memory layers must be initialized with base content.
+
+### RAG Index Initialization
+
+| Step | Description |
+|------|-------------|
+| 1. Extract | Parse PDF documents from `data/static/` (Russian language) |
+| 2. Chunk | Split into ~500 token chunks with overlap |
+| 3. Embed | Generate embeddings (OpenAI `text-embedding-3-small` or Gemini) |
+| 4. Index | Store in FAISS with metadata (source, type, chunk_index) |
+
+**Documents to Index:**
+- Static: `паспорт бренда.pdf`, `карточка читателя.pdf`, `код речи.pdf`, `код текста.pdf`
+- Dynamic: `taboo_list.md`, `style_adjustments.md`
+
+### Knowledge Graph Seeding
+
+**Source File:** `data/seed/worldview.md` (user-provided links to source content)
+
+The worldview is automatically extracted from content sources provided by the user. An LLM processes each source to identify entities and relationships, building the knowledge graph from actual content.
+
+**Worldview File Format:**
+
+```markdown
+# Worldview Sources
+
+Links to content that defines the brand's worldview and stances.
+
+## Blog Posts & Articles
+- https://example.com/why-i-hate-langchain | priority: high
+- https://example.com/pure-python-for-llms | priority: high
+- https://example.com/docker-best-practices | priority: medium
+
+## Videos & Podcasts
+- https://youtube.com/watch?v=xxx | title: "LangChain is Overrated"
+- https://youtube.com/watch?v=yyy | title: "Simplicity in ML Systems"
+
+## Social Posts
+- https://linkedin.com/posts/xxx | type: opinion
+- https://t.me/channel/post123 | type: case-study
+
+## Technical Writing
+- https://example.com/debugging-llm-apps | category: engineering
+```
+
+**LLM Processing Pipeline:**
+
+```
+worldview.md → Fetch URLs → Extract Content → LLM Analysis → Entity/Relation Extraction → Neo4j
+      ↓              ↓              ↓                ↓                    ↓
+   Links        HTML/Text      Clean text      Identify:           Create nodes
+                parsing        extraction    - Tools mentioned      & edges with
+                                            - Stances expressed    source attribution
+                                            - Problems discussed
+                                            - Causal claims
+```
+
+| Step | Description |
+|------|-------------|
+| 1. Parse | Read `worldview.md` and extract URLs with metadata |
+| 2. Fetch | Retrieve content from each URL (web scraping, API) |
+| 3. Extract | Clean and extract main text content |
+| 4. Analyze | LLM identifies entities and relationships in content |
+| 5. Structure | Convert LLM output to graph nodes and edges |
+| 6. Load | Insert into Neo4j with source attribution |
+
+**Entity Types Extracted:**
+
+| Type | Extraction Cues | Properties |
+|------|-----------------|------------|
+| `Tool` | Technology names, frameworks, libraries | name, category, source_url |
+| `Concept` | Ideas, principles, values discussed | name, domain, source_url |
+| `Problem` | Pain points, issues, complaints | name, severity, source_url |
+
+**Relationship Types Extracted:**
+
+| Relationship | LLM Detection Cues | Properties |
+|--------------|-------------------|------------|
+| `HATES` | Negative sentiment, criticism, warnings | reason, quote, confidence |
+| `PREFERS` | Recommendations, positive comparisons | reason, quote, confidence |
+| `SKEPTICAL_OF` | Caution, caveats, "but..." statements | reason, quote, confidence |
+| `VALUES` | Emphasized principles, repeated themes | reason, quote, confidence |
+| `CAUSES` | "leads to", "results in", causal claims | context, quote, confidence |
+| `ENABLES` | "allows", "makes possible", benefits | context, quote, confidence |
+
+**Source Attribution:**
+Every extracted entity and relationship includes:
+- `source_url`: Original content URL
+- `extracted_quote`: Supporting text from source
+- `confidence`: LLM confidence score (0-1)
+- `extracted_at`: Timestamp of extraction
+
 ## Deployment Considerations
 
 1. **FAISS Index**: 
@@ -380,6 +474,5 @@ services:
    - Data persisted to `data/neo4j_data/` via volume mount
    - Survives container restarts and recreations
    - Start with `docker-compose up -d` before running the application
-3. **Document Ingestion**: Initial indexing of static documents required before first run
-4. **Graph Seeding**: Pre-populate knowledge graph with core worldview relationships
-5. **FAISS Persistence**: The index directory should be included in backups; exclude from `.gitignore` only the index files, not the directory structure
+3. **Initial Setup**: Run RAG indexing and graph seeding before first use (see Initial Setup section above)
+4. **FAISS Persistence**: The index directory should be included in backups; exclude from `.gitignore` only the index files, not the directory structure
