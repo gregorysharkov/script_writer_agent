@@ -34,6 +34,7 @@ max-line-length = 200
 # Disable specific warnings
 disable = [
     "C0114",  # missing-module-docstring
+    "W0718",  # broad-exception-caught
 ]
 
 [tool.pylint.format]
@@ -47,4 +48,3 @@ target-version = ["py38", "py39", "py310", "py311", "py313"]
 [tool.isort]
 profile = "black"
 line_length = 200
-

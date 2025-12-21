@@ -1,6 +1,15 @@
-"""RAG Constitutional Layer - Style and rules retrieval using Pinecone."""
+"""RAG Constitutional Layer - Style and rules retrieval using FAISS."""
 
-from pragmatic_content_factory.memory.rag.retriever import rag_retriever
-from pragmatic_content_factory.memory.rag.indexer import rag_indexer
+__all__ = []
 
-__all__ = ["rag_retriever", "rag_indexer"]
+try:
+    from pragmatic_content_factory.memory.rag.retriever import rag_retriever
+    __all__.append("rag_retriever")
+except ImportError:
+    pass
+
+try:
+    from pragmatic_content_factory.memory.rag.indexer import rag_indexer
+    __all__.append("rag_indexer")
+except ImportError:
+    pass

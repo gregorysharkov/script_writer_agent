@@ -5,9 +5,7 @@ Links to content that defines the brand's worldview and stances.
 - https://cloud.google.com/architecture/mlops-continuous-delivery-and-automation-pipelines-in-machine-learning | title: Google Cloud: Practitioners Guide to MLOps
 
 ## Blog Posts & Articles
-- https://example.com/why-i-hate-langchain | priority: high
-- https://example.com/pure-python-for-llms | priority: high
-- https://example.com/docker-best-practices | priority: medium
+
 
 ## Videos & Podcasts
 - https://youtu.be/CvQ7e6yUtnw | title: "This Is Why Python Data Classes Are Awesome"
