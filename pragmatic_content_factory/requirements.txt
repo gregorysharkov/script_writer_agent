@@ -37,6 +37,7 @@ python-dotenv>=1.0.0
 # Utilities
 tenacity>=8.2.0  # Retry logic
 structlog>=24.1.0  # Structured logging
+tqdm>=4.66.0  # Progress bars
 
 # Development & Testing
 pytest>=8.0.0

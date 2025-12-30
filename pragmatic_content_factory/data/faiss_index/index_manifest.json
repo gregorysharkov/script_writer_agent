@@ -1,0 +1,57 @@
+{
+  "created_at": "2025-12-30T03:18:29.415243",
+  "updated_at": "2025-12-30T03:18:29.421210",
+  "config_hash": "71734cab8ab1129c527f50c63262590d",
+  "embedding_model": "text-embedding-004",
+  "documents": {
+    "data/static/\u043a\u043e\u0434 \u0442\u0435\u043a\u0441\u0442\u0430.pdf": {
+      "file_hash": "f57f539127d64ddbb0f08d9ed5019f8b",
+      "chunk_count": 8,
+      "original_language": "ru",
+      "indexed_at": "2025-12-30T03:08:29.132691"
+    },
+    "data/static/\u043f\u043e\u0441\u0442\u044b \u0442\u0433 gg.pdf": {
+      "file_hash": "0e2aceef29260de82444373e3b27065e",
+      "chunk_count": 20,
+      "original_language": "en",
+      "indexed_at": "2025-12-30T03:08:30.999756"
+    },
+    "data/static/\u043a\u043e\u0434 \u0440\u0435\u0447\u0438.pdf": {
+      "file_hash": "81d9eba9e001eec1b0106d9af02dd001",
+      "chunk_count": 11,
+      "original_language": "ru",
+      "indexed_at": "2025-12-30T03:08:55.397048"
+    },
+    "data/static/\u043f\u043e\u0434\u043a\u0430\u0441\u0442\u044b.pdf": {
+      "file_hash": "cfa56ba12f75390786c733e783c1214e",
+      "chunk_count": 50,
+      "original_language": "ru",
+      "indexed_at": "2025-12-30T03:12:23.176425"
+    },
+    "data/static/\u043a\u0430\u0440\u0442\u043e\u0447\u043a\u0430 \u0447\u0438\u0442\u0430\u0442\u0435\u043b\u044f.pdf": {
+      "file_hash": "fbf4255e72aaa75626f52f7b9bff47fe",
+      "chunk_count": 91,
+      "original_language": "ru",
+      "indexed_at": "2025-12-30T03:17:27.898460"
+    },
+    "data/static/\u043f\u0430\u0441\u043f\u043e\u0440\u0442 \u0431\u0440\u0435\u043d\u0434\u0430.pdf": {
+      "file_hash": "6efc290943d35e50848e491f4c9b815a",
+      "chunk_count": 14,
+      "original_language": "ru",
+      "indexed_at": "2025-12-30T03:18:14.874580"
+    },
+    "data/dynamic/style_adjustments.md": {
+      "file_hash": "9c5c2c919d3be80a23d198348fe5e9ba",
+      "chunk_count": 1,
+      "original_language": "en",
+      "indexed_at": "2025-12-30T03:18:16.169163"
+    },
+    "data/dynamic/taboo_list.md": {
+      "file_hash": "da4c399366b3121026024509f17db054",
+      "chunk_count": 1,
+      "original_language": "en",
+      "indexed_at": "2025-12-30T03:18:17.403990"
+    }
+  },
+  "total_chunks": 196
+}
