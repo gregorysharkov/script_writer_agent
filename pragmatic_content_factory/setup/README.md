@@ -18,19 +18,26 @@ worldview.md → Fetch Content → Translate → Extract Entities → Neo4j
               data/downloaded/
 ```
 
-## Prerequisite
+## Prerequisites
+
 1. **Neo4j** running via Docker:
    ```bash
    cd pragmatic_content_factory
    docker-compose up -d
    ```
 
-2. **Environment variables** in `.env` at project root:
+2. **Configuration** - Neo4j settings are loaded from:
+   - `conf/neo4j_config.yaml` - connection URI, user, query settings
+   - Environment variables override config file values
+
+   Create `.env` at project root (copy from `env.example`):
    ```bash
    GOOGLE_API_KEY=your-google-api-key
-   NEO4J_URI=bolt://localhost:7687
-   NEO4J_USER=neo4j
-   NEO4J_PASSWORD=password
+   NEO4J_PASSWORD=password  # Password should be in .env, not config file
+   
+   # Optional overrides (defaults come from conf/neo4j_config.yaml):
+   # NEO4J_URI=bolt://localhost:7687
+   # NEO4J_USER=neo4j
    ```
 
 3. **Dependencies** installed:
@@ -203,8 +210,17 @@ GOOGLE_API_KEY=your-api-key
 
 ### Neo4j connection failed
 
-Ensure Neo4j is running:
-```bash
-docker-compose up -d
-docker-compose logs neo4j
-```
+1. Ensure Neo4j is running:
+   ```bash
+   docker-compose up -d
+   docker-compose logs neo4j
+   ```
+
+2. Verify configuration in `conf/neo4j_config.yaml`:
+   ```yaml
+   connection:
+     uri: "bolt://localhost:7687"
+     user: "neo4j"
+   ```
+
+3. Ensure `NEO4J_PASSWORD` is set in `.env` file.

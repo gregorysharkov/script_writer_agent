@@ -322,24 +322,42 @@ This allows earlier stages to benefit from insights discovered later in the pipe
 
 ## Configuration
 
+Configuration uses a layered approach with YAML config files and environment variable overrides.
+
+### Config Files
+
+Located in `conf/` directory:
+
+| File | Purpose |
+|------|---------|
+| `rag_config.yaml` | RAG chunking, embedding, and indexing settings |
+| `neo4j_config.yaml` | Neo4j connection and query settings |
+
 ### Environment Variables
 
-```bash
-# FAISS (local vector store)
-FAISS_INDEX_PATH=data/faiss_index  # Directory for persisted index
-FAISS_INDEX_NAME=pcf-constitutional  # Index file name
+Environment variables override config file values. Create a `.env` file at project root:
 
-# Neo4j
+```bash
+# LLM (required)
+GOOGLE_API_KEY=xxx
+
+# Neo4j (overrides conf/neo4j_config.yaml)
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USER=neo4j
-NEO4J_PASSWORD=xxx
-
-# LLM
-GOOGLE_API_KEY=xxx
+NEO4J_PASSWORD=xxx  # Password should always be in .env, not config file
 
 # Optional
 OPENAI_API_KEY=xxx  # For embeddings alternative
 ```
+
+See `env.example` at project root for a template.
+
+### Configuration Priority
+
+1. Explicit constructor arguments (highest)
+2. Environment variables
+3. YAML config files (`conf/*.yaml`)
+4. Built-in defaults (lowest)
 
 ### Docker Compose
 

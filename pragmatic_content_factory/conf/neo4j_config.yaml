@@ -1,0 +1,41 @@
+# Neo4j Knowledge Graph Configuration
+# ====================================
+# This file contains settings for Neo4j connection and query behavior.
+# Sensitive values (password) should be set in .env file.
+
+connection:
+  # Neo4j connection URI (can be overridden by NEO4J_URI env var)
+  uri: "bolt://localhost:7687"
+  # Neo4j username (can be overridden by NEO4J_USER env var)
+  user: "neo4j"
+  # Password should be set via NEO4J_PASSWORD env var, not here
+
+query:
+  # Default limit for related entities query
+  default_entity_limit: 10
+  # Default limit for worldview context entities
+  default_worldview_limit: 5
+  # Connection timeout in seconds
+  connection_timeout: 30
+
+# Node labels used in the knowledge graph
+labels:
+  person: "Person"
+  tool: "Tool"
+  concept: "Concept"
+  problem: "Problem"
+
+# Relationship types for stances
+stance_relationships:
+  - "HATES"
+  - "PREFERS"
+  - "SKEPTICAL_OF"
+  - "VALUES"
+
+# Relationship types for causal connections
+causal_relationships:
+  - "CAUSES"
+  - "ENABLES"
+  - "SOLVES"
+  - "LEADS_TO"
+

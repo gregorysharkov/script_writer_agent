@@ -37,6 +37,10 @@ disable = [
     "W0718",  # broad-exception-caught
 ]
 
+[tool.pylint.basic]
+# Allow re-exporting from __init__.py
+init-import = "yes"
+
 [tool.pylint.format]
 # Maximum number of characters on a single line
 max-line-length = 200

@@ -1,12 +1,14 @@
 """Neo4j loader for persisting extracted entities and relationships."""
 
-import os
-from datetime import datetime
 from typing import Optional
 
 from neo4j import AsyncGraphDatabase, AsyncDriver
 import structlog
 
+from pragmatic_content_factory.memory.knowledge_graph.models import (
+    Neo4jConfig,
+    get_neo4j_config,
+)
 from pragmatic_content_factory.setup.processors.entity_extractor import (
     ExtractedEntity,
     ExtractedRelationship,
@@ -17,10 +19,15 @@ logger = structlog.get_logger(__name__)
 
 
 class Neo4jLoader:
-    """Loader for persisting entities and relationships to Neo4j."""
+    """Loader for persisting entities and relationships to Neo4j.
+
+    Configuration is loaded from conf/neo4j_config.yaml with
+    environment variable overrides (NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD).
+    """
 
     def __init__(
         self,
+        config: Optional[Neo4jConfig] = None,
         uri: Optional[str] = None,
         user: Optional[str] = None,
         password: Optional[str] = None,
@@ -28,13 +35,18 @@ class Neo4jLoader:
         """Initialize the Neo4j loader.
 
         Args:
-            uri: Neo4j connection URI.
-            user: Neo4j username.
-            password: Neo4j password.
+            config: Neo4jConfig instance. If not provided, loads from config file.
+            uri: Neo4j connection URI (overrides config).
+            user: Neo4j username (overrides config).
+            password: Neo4j password (overrides config).
         """
-        self.uri = uri or os.getenv("NEO4J_URI", "bolt://localhost:7687")
-        self.user = user or os.getenv("NEO4J_USER", "neo4j")
-        self.password = password or os.getenv("NEO4J_PASSWORD", "password")
+        self.config = config or get_neo4j_config()
+
+        # Allow explicit overrides, otherwise use config
+        self.uri = uri or self.config.connection.uri
+        self.user = user or self.config.connection.user
+        self.password = password or self.config.get_password_or_default()
+
         self._driver: Optional[AsyncDriver] = None
 
     async def connect(self) -> None:
@@ -78,7 +90,9 @@ class Neo4jLoader:
                     await session.run(constraint)
                 except Exception as e:
                     # Constraint may already exist
-                    logger.debug("Constraint creation", constraint=constraint, note=str(e))
+                    logger.debug(
+                        "Constraint creation", constraint=constraint, note=str(e)
+                    )
 
         logger.info("Neo4j constraints created/verified")
 
@@ -325,6 +339,7 @@ class Neo4jLoader:
 async def load_to_neo4j(
     entities: list[ExtractedEntity],
     relationships: list[ExtractedRelationship],
+    config: Optional[Neo4jConfig] = None,
     uri: Optional[str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
@@ -334,13 +349,16 @@ async def load_to_neo4j(
     Args:
         entities: List of entities to load.
         relationships: List of relationships to load.
-        uri: Neo4j connection URI.
-        user: Neo4j username.
-        password: Neo4j password.
+        config: Neo4jConfig instance (optional).
+        uri: Neo4j connection URI (overrides config).
+        user: Neo4j username (overrides config).
+        password: Neo4j password (overrides config).
 
     Returns:
         Dictionary with counts of loaded items.
     """
-    async with Neo4jLoader(uri=uri, user=user, password=password) as loader:
+    async with Neo4jLoader(
+        config=config, uri=uri, user=user, password=password
+    ) as loader:
         await loader.create_constraints()
         return await loader.load_all(entities, relationships)

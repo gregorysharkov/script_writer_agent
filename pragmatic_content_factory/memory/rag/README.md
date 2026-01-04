@@ -67,6 +67,21 @@ python -m setup.seed_rag_index --force
 
 ### 3. Use in Code
 
+**For ADK Agents** - use the tools module:
+
+```python
+from pragmatic_content_factory.tools import query_style_rules, query_taboos
+
+# In agent definition
+agent = Agent(
+    name="voice_architect",
+    tools=[query_style_rules, query_taboos],
+    ...
+)
+```
+
+**For direct Python use**:
+
 ```python
 from pragmatic_content_factory.memory.rag import get_retriever, retrieve
 
@@ -116,6 +131,16 @@ memory/rag/
 - Singleton pattern for efficient reuse across agents
 - Async interface: `await retriever.retrieve(query, top_k=5)`
 - Convenience methods: `get_style_rules()`, `get_taboo_terms()`
+
+### Agent Tools (`tools/rag_tools.py`)
+
+ADK-compatible function tools that wrap the retriever:
+
+| Tool | Purpose | Used By |
+|------|---------|---------|
+| `query_style_rules` | Get style rules and voice guidelines | Voice Architect |
+| `query_taboos` | Check against taboo/prohibited terms | Ruthless Critic |
+| `query_brand_voice` | Get brand persona guidelines | Voice Architect |
 
 ## Smart Incremental Indexing
 
