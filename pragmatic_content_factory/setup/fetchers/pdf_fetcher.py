@@ -2,6 +2,7 @@
 
 import asyncio
 import hashlib
+import io
 import re
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +23,16 @@ USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
+
+
+@dataclass
+class ExtractedPDFText:
+    """Result of extracting text from a PDF (file or bytes)."""
+
+    text: str
+    page_count: int
+    success: bool
+    error: Optional[str] = None
 
 
 @dataclass
@@ -62,31 +73,122 @@ def _sanitize_filename(url: str) -> str:
     return filename
 
 
-def _extract_text_from_pdf(file_path: Path) -> tuple[str, int]:
+def _extract_text_from_reader(reader: PdfReader) -> tuple[str, int]:
+    """Extract text content from a PdfReader instance.
+
+    Args:
+        reader: PdfReader instance.
+
+    Returns:
+        Tuple of (extracted_text, page_count).
+    """
+    page_count = len(reader.pages)
+
+    text_parts = []
+    for i, page in enumerate(reader.pages):
+        page_text = page.extract_text()
+        if page_text:
+            text_parts.append(f"--- Page {i + 1} ---\n{page_text}")
+
+    text = "\n\n".join(text_parts)
+
+    # Clean up whitespace
+    text = re.sub(r"\n{3,}", "\n\n", text)
+
+    return text, page_count
+
+
+def extract_text_from_pdf_bytes(pdf_bytes: bytes) -> ExtractedPDFText:
+    """Extract text content from PDF bytes (e.g., from artifacts).
+
+    Args:
+        pdf_bytes: Raw PDF file bytes.
+
+    Returns:
+        ExtractedPDFText with the extracted text and metadata.
+    """
+    try:
+        reader = PdfReader(io.BytesIO(pdf_bytes))
+        text, page_count = _extract_text_from_reader(reader)
+
+        if not text.strip():
+            return ExtractedPDFText(
+                text="",
+                page_count=page_count,
+                success=False,
+                error="PDF contains no extractable text (may be image-based)",
+            )
+
+        return ExtractedPDFText(
+            text=text,
+            page_count=page_count,
+            success=True,
+        )
+
+    except Exception as e:
+        logger.error("Error extracting text from PDF bytes", error=str(e))
+        return ExtractedPDFText(
+            text="",
+            page_count=0,
+            success=False,
+            error=f"Failed to extract text: {str(e)}",
+        )
+
+
+def extract_text_from_pdf_file(file_path: Path) -> ExtractedPDFText:
     """Extract text content from a PDF file.
 
     Args:
         file_path: Path to the PDF file.
 
     Returns:
-        Tuple of (extracted_text, page_count).
+        ExtractedPDFText with the extracted text and metadata.
     """
     try:
         reader = PdfReader(file_path)
-        page_count = len(reader.pages)
+        text, page_count = _extract_text_from_reader(reader)
 
-        text_parts = []
-        for i, page in enumerate(reader.pages):
-            page_text = page.extract_text()
-            if page_text:
-                text_parts.append(f"--- Page {i + 1} ---\n{page_text}")
+        if not text.strip():
+            return ExtractedPDFText(
+                text="",
+                page_count=page_count,
+                success=False,
+                error="PDF contains no extractable text (may be image-based)",
+            )
 
-        text = "\n\n".join(text_parts)
+        return ExtractedPDFText(
+            text=text,
+            page_count=page_count,
+            success=True,
+        )
 
-        # Clean up whitespace
-        text = re.sub(r"\n{3,}", "\n\n", text)
+    except Exception as e:
+        logger.error(
+            "Error extracting text from PDF", path=str(file_path), error=str(e)
+        )
+        return ExtractedPDFText(
+            text="",
+            page_count=0,
+            success=False,
+            error=f"Failed to extract text: {str(e)}",
+        )
 
-        return text, page_count
+
+def _extract_text_from_pdf(file_path: Path) -> tuple[str, int]:
+    """Extract text content from a PDF file (legacy function).
+
+    Args:
+        file_path: Path to the PDF file.
+
+    Returns:
+        Tuple of (extracted_text, page_count).
+
+    Raises:
+        Exception: If extraction fails.
+    """
+    try:
+        reader = PdfReader(file_path)
+        return _extract_text_from_reader(reader)
 
     except Exception as e:
         logger.error(

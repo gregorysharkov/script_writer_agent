@@ -12,12 +12,16 @@ from datetime import datetime, timezone
 from typing import Literal, Optional
 
 import structlog
+from google.adk.tools import ToolContext
 
 from pragmatic_content_factory.memory.rag.indexer import RAGIndexer
 from pragmatic_content_factory.memory.rag.models import DocumentChunk, RAGConfig
 from pragmatic_content_factory.setup.fetchers.web_fetcher import fetch_webpage
 from pragmatic_content_factory.setup.fetchers.youtube_fetcher import fetch_youtube
-from pragmatic_content_factory.setup.fetchers.pdf_fetcher import fetch_pdf
+from pragmatic_content_factory.setup.fetchers.pdf_fetcher import (
+    fetch_pdf,
+    extract_text_from_pdf_bytes,
+)
 from pragmatic_content_factory.setup.processors.translator import translate_to_english
 from pragmatic_content_factory.setup.processors.entity_extractor import (
     extract_entities_and_relationships,
@@ -383,3 +387,176 @@ async def add_stance(
             "stance_type": stance_type,
             "error": str(e),
         }
+
+
+async def process_pdf_artifacts(tool_context: ToolContext) -> dict:
+    """Process PDF file attachments to extract entities and relationships into the Knowledge Graph.
+
+    This tool automatically detects PDF files that were attached by the user
+    in the conversation and processes them through the entity extraction pipeline.
+
+    Use this tool when:
+    - User attaches a PDF file in the chat
+    - User mentions they've attached/uploaded a document
+    - You detect PDF artifacts in the conversation context
+
+    Args:
+        tool_context: ADK ToolContext (automatically injected) providing access to artifacts.
+
+    Returns:
+        Dictionary containing:
+        - processed: Number of PDFs successfully processed
+        - failed: Number of PDFs that failed
+        - entities_added: Total entities added to knowledge graph
+        - relationships_added: Total relationships added
+        - details: List of processing details per PDF
+    """
+    results = {
+        "processed": 0,
+        "failed": 0,
+        "entities_added": 0,
+        "relationships_added": 0,
+        "details": [],
+    }
+
+    try:
+        # List all available artifacts
+        artifact_names = tool_context.list_artifacts()
+
+        if not artifact_names:
+            logger.info("No artifacts found in context")
+            return {
+                **results,
+                "message": "No file attachments found in the conversation.",
+            }
+
+        # Filter for PDF artifacts
+        pdf_artifacts = [
+            name for name in artifact_names if name.lower().endswith(".pdf")
+        ]
+
+        if not pdf_artifacts:
+            logger.info("No PDF artifacts found", total_artifacts=len(artifact_names))
+            return {
+                **results,
+                "message": f"No PDF files found among {len(artifact_names)} attachment(s).",
+            }
+
+        logger.info("Processing PDF artifacts", pdf_count=len(pdf_artifacts))
+
+        for artifact_name in pdf_artifacts:
+            pdf_result = {
+                "filename": artifact_name,
+                "success": False,
+                "entities": 0,
+                "relationships": 0,
+                "page_count": 0,
+                "error": None,
+            }
+
+            try:
+                # 1. Load the artifact
+                artifact_part = tool_context.load_artifact(artifact_name)
+
+                if artifact_part is None:
+                    pdf_result["error"] = "Failed to load artifact"
+                    results["failed"] += 1
+                    results["details"].append(pdf_result)
+                    continue
+
+                # 2. Get the PDF bytes from the artifact
+                # The artifact Part contains inline_data with the bytes
+                if hasattr(artifact_part, "inline_data") and artifact_part.inline_data:
+                    pdf_bytes = artifact_part.inline_data.data
+                elif hasattr(artifact_part, "data"):
+                    pdf_bytes = artifact_part.data
+                else:
+                    pdf_result["error"] = "Artifact does not contain binary data"
+                    results["failed"] += 1
+                    results["details"].append(pdf_result)
+                    continue
+
+                # 3. Extract text from PDF bytes
+                extraction = extract_text_from_pdf_bytes(pdf_bytes)
+                pdf_result["page_count"] = extraction.page_count
+
+                if not extraction.success or not extraction.text:
+                    pdf_result["error"] = extraction.error or "Failed to extract text"
+                    results["failed"] += 1
+                    results["details"].append(pdf_result)
+                    continue
+
+                logger.info(
+                    "PDF text extracted",
+                    filename=artifact_name,
+                    pages=extraction.page_count,
+                    text_length=len(extraction.text),
+                )
+
+                # 4. Translate if needed
+                translation_result = await translate_to_english(extraction.text)
+                processed_text = translation_result.translated_text
+
+                # 5. Extract entities and relationships
+                # Use the artifact filename as the source identifier
+                source_id = f"attachment:{artifact_name}"
+                entity_extraction = await extract_entities_and_relationships(
+                    processed_text, source_id
+                )
+
+                if (
+                    not entity_extraction.entities
+                    and not entity_extraction.relationships
+                ):
+                    pdf_result["error"] = "No entities or relationships extracted"
+                    results["failed"] += 1
+                    results["details"].append(pdf_result)
+                    continue
+
+                # 6. Load to Neo4j
+                async with Neo4jLoader() as loader:
+                    await loader.create_constraints()
+                    load_result = await loader.load_extraction_result(entity_extraction)
+
+                pdf_result["success"] = True
+                pdf_result["entities"] = load_result["entities_loaded"]
+                pdf_result["relationships"] = load_result["relationships_loaded"]
+
+                results["processed"] += 1
+                results["entities_added"] += load_result["entities_loaded"]
+                results["relationships_added"] += load_result["relationships_loaded"]
+
+                logger.info(
+                    "PDF artifact processed successfully",
+                    filename=artifact_name,
+                    entities=load_result["entities_loaded"],
+                    relationships=load_result["relationships_loaded"],
+                )
+
+            except Exception as e:
+                pdf_result["error"] = str(e)
+                results["failed"] += 1
+                logger.error(
+                    "Failed to process PDF artifact",
+                    filename=artifact_name,
+                    error=str(e),
+                )
+
+            results["details"].append(pdf_result)
+
+    except Exception as e:
+        logger.error("Error accessing artifacts", error=str(e))
+        return {
+            **results,
+            "error": f"Failed to access artifacts: {str(e)}",
+        }
+
+    logger.info(
+        "PDF artifact processing completed",
+        processed=results["processed"],
+        failed=results["failed"],
+        entities=results["entities_added"],
+        relationships=results["relationships_added"],
+    )
+
+    return results

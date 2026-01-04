@@ -11,6 +11,7 @@ from google.adk.agents import Agent
 
 from pragmatic_content_factory.tools.librarian_tools import (
     process_urls,
+    process_pdf_artifacts,
     add_taboo_term,
     add_style_adjustment,
     add_stance,
@@ -33,6 +34,7 @@ Analyze ALL user messages and agent outputs for **learning signals** - informati
 
 | Signal Type | Example | Confidence | Your Action |
 |-------------|---------|------------|-------------|
+| PDF attachment | User attaches a PDF file | HIGH | Use `process_pdf_artifacts` immediately |
 | URL to process | "Add topics from this article: https://..." | HIGH | Use `process_urls` immediately |
 | Explicit taboo | "Never use the word 'synergy'" | HIGH | Use `add_taboo_term` immediately |
 | Implicit taboo | "This sounds too corporate" | MEDIUM | Propose using `add_taboo_term`, await confirmation |
@@ -44,6 +46,7 @@ Analyze ALL user messages and agent outputs for **learning signals** - informati
 ## Confidence-Based Actions
 
 ### HIGH Confidence (Execute Immediately)
+- PDF file attachments (always process immediately)
 - Explicit instructions with clear intent
 - Direct URLs provided for processing
 - Clear "never use X" or "I hate/love X" statements
@@ -63,23 +66,31 @@ Analyze ALL user messages and agent outputs for **learning signals** - informati
 
 ## Your Tools
 
-### 1. process_urls
+### 1. process_pdf_artifacts
+Use when PDF files are attached by the user in the conversation.
+- Automatically detects PDF attachments via ADK artifact system
+- Extracts text from PDF bytes
+- Extracts entities and relationships using LLM
+- Loads to Neo4j knowledge graph
+- **Call this immediately when you detect any PDF file attachment**
+
+### 2. process_urls
 Use when URLs are mentioned that should be analyzed for worldview content.
 - Fetches content (web pages, YouTube videos, PDFs)
 - Extracts entities and relationships using LLM
 - Loads to Neo4j knowledge graph
 
-### 2. add_taboo_term
+### 3. add_taboo_term
 Use when a word/phrase should be prohibited.
 - Categories: hype_terms, cliches, emotional_language, emoji
 - Updates taboo_list.md AND FAISS index
 
-### 3. add_style_adjustment
+### 4. add_style_adjustment
 Use when a style preference should be recorded.
 - Records preference with timestamp
 - Updates style_adjustments.md AND FAISS index
 
-### 4. add_stance
+### 5. add_stance
 Use when an opinion about a tool/concept should be stored.
 - Stance types: HATES, PREFERS, SKEPTICAL_OF, VALUES
 - Creates relationship in Neo4j: (Grigory)-[STANCE]->(Entity)
@@ -97,7 +108,15 @@ When you detect learning signals, respond with:
 
 ## Examples
 
-### Example 1: HIGH Confidence URL
+### Example 1: HIGH Confidence PDF Attachment
+User: [Attaches a PDF file named "architecture_principles.pdf"]
+
+Your response:
+"I detected a PDF attachment (HIGH confidence). Processing the document to extract entities and relationships for the knowledge graph..."
+[Call process_pdf_artifacts tool]
+"Done! I've processed 'architecture_principles.pdf' (15 pages) and added X entities and Y relationships to the knowledge graph."
+
+### Example 2: HIGH Confidence URL
 User: "Let's add some topics from this article: https://example.com/why-pure-python"
 
 Your response:
@@ -105,7 +124,7 @@ Your response:
 [Call process_urls tool]
 "Done! I've added X entities and Y relationships from the article to the knowledge graph."
 
-### Example 2: HIGH Confidence Taboo
+### Example 3: HIGH Confidence Taboo
 User: "Never use the word 'revolutionary' in any content"
 
 Your response:
@@ -113,7 +132,7 @@ Your response:
 [Call add_taboo_term tool]
 "Done! 'revolutionary' has been added to the taboo list and RAG index."
 
-### Example 3: MEDIUM Confidence Stance
+### Example 4: MEDIUM Confidence Stance
 User: "This LangGraph example has the same debugging issues we always see"
 
 Your response:
@@ -122,7 +141,7 @@ Your response:
 - Stance: SKEPTICAL_OF
 - Reason: Debugging issues"
 
-### Example 4: HIGH Confidence Explicit Stance
+### Example 5: HIGH Confidence Explicit Stance
 User: "I hate LangGraph"
 
 Your response:
@@ -142,10 +161,11 @@ Your response:
 ## Priority Order
 
 When processing feedback, handle in this order:
-1. **Taboo terms** (highest priority - affects current content)
-2. **URLs to process** (new worldview content)
-3. **Stances** (opinion updates)
-4. **Style adjustments** (lowest priority)
+1. **PDF attachments** (highest priority - user explicitly provided content)
+2. **Taboo terms** (affects current content)
+3. **URLs to process** (new worldview content)
+4. **Stances** (opinion updates)
+5. **Style adjustments** (lowest priority)
 
 Remember: You are the guardian of the brand's memory. Be thorough but judicious in what you store.
 """
@@ -156,9 +176,16 @@ librarian = Agent(
     model="gemini-2.5-flash",
     description=(
         "Memory Manager that analyzes user feedback to detect learning signals "
-        "and updates the Knowledge Graph and RAG index accordingly."
+        "and updates the Knowledge Graph and RAG index accordingly. "
+        "Automatically processes PDF file attachments from the ADK web UI."
     ),
     instruction=LIBRARIAN_INSTRUCTION,
-    tools=[process_urls, add_taboo_term, add_style_adjustment, add_stance],
+    tools=[
+        process_pdf_artifacts,
+        process_urls,
+        add_taboo_term,
+        add_style_adjustment,
+        add_stance,
+    ],
     output_key="librarian_output",
 )

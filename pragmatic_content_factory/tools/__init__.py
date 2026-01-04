@@ -34,6 +34,7 @@ from pragmatic_content_factory.tools.kg_tools import (
 # Librarian tools (for memory write operations)
 from pragmatic_content_factory.tools.librarian_tools import (
     process_urls,
+    process_pdf_artifacts,
     add_taboo_term,
     add_style_adjustment,
     add_stance,
@@ -50,6 +51,7 @@ __all__ = [
     "get_all_stances",
     # Librarian tools
     "process_urls",
+    "process_pdf_artifacts",
     "add_taboo_term",
     "add_style_adjustment",
     "add_stance",
