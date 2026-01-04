@@ -1,7 +1,7 @@
 """Pydantic models for RAG Constitutional Layer."""
 
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 import json
@@ -36,6 +36,8 @@ class PathsConfig(BaseModel):
 
     index_dir: str = "data/faiss_index"  # FAISS index directory
     index_name: str = "pcf-constitutional"  # Index file name
+    taboo_list: str = "data/dynamic/taboo_list.md"  # Taboo terms document
+    style_adjustments: str = "data/dynamic/style_adjustments.md"  # Style rules document
 
 
 class RAGConfig(BaseModel):
@@ -107,14 +109,14 @@ class DocumentInfo(BaseModel):
     original_language: str = Field(
         default="unknown", description="Detected source language"
     )
-    indexed_at: datetime = Field(default_factory=datetime.utcnow)
+    indexed_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class IndexManifest(BaseModel):
     """Manifest tracking indexed documents for incremental updates."""
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     config_hash: str = Field(description="Hash of RAG config at index time")
     embedding_model: str = Field(description="Embedding model used")
     documents: Annotated[
@@ -190,7 +192,7 @@ class IndexManifest(BaseModel):
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
 
         # Update timestamp
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(timezone.utc)()
 
         with open(manifest_path, "w", encoding="utf-8") as f:
             json.dump(self.model_dump(mode="json"), f, indent=2, default=str)

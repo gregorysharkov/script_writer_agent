@@ -6,7 +6,7 @@ import json
 import os
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -83,7 +83,7 @@ def save_processed_urls(urls: set[str]) -> None:
     PROCESSED_FILE.parent.mkdir(parents=True, exist_ok=True)
     data = {
         "urls": list(urls),
-        "updated_at": datetime.utcnow().isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     PROCESSED_FILE.write_text(json.dumps(data, indent=2))
 

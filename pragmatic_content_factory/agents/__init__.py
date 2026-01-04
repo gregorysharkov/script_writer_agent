@@ -1,34 +1,19 @@
-"""The Crew - Specialized agents for content generation pipeline."""
+"""The Crew - Specialized agents for content generation pipeline.
 
-__all__ = []
+Currently implemented:
+- deep_analyst: Extracts insights from raw content
+- librarian: Manages memory updates from feedback
 
-# Conditionally import agents that may not be implemented yet
-try:
-    from pragmatic_content_factory.agents.deep_analyst import deep_analyst
-    __all__.append("deep_analyst")
-except ImportError:
-    pass
+Future agents (not yet implemented):
+- voice_architect: Generates draft scripts
+- ruthless_critic: Validates against brand rules
+- atomizer: Creates platform-specific content
+"""
 
-try:
-    from pragmatic_content_factory.agents.voice_architect import voice_architect
-    __all__.append("voice_architect")
-except ImportError:
-    pass
+from pragmatic_content_factory.agents.deep_analyst import deep_analyst
+from pragmatic_content_factory.agents.librarian import librarian
 
-try:
-    from pragmatic_content_factory.agents.ruthless_critic import ruthless_critic
-    __all__.append("ruthless_critic")
-except ImportError:
-    pass
-
-try:
-    from pragmatic_content_factory.agents.atomizer import atomizer
-    __all__.append("atomizer")
-except ImportError:
-    pass
-
-try:
-    from pragmatic_content_factory.agents.librarian import librarian
-    __all__.append("librarian")
-except ImportError:
-    pass
+__all__ = [
+    "deep_analyst",
+    "librarian",
+]

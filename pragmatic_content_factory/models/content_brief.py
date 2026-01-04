@@ -5,7 +5,7 @@ containing key insights, pain points, social currency, and talking points
 that will be used by downstream agents to create content.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
 
@@ -129,7 +129,7 @@ class ContentBrief(BaseModel):
         description="Brief summary of the original raw input"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="When this brief was created",
     )
 

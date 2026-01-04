@@ -2,7 +2,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 
 import google.generativeai as genai
@@ -56,7 +56,7 @@ class ExtractionResult(BaseModel):
     entities: list[ExtractedEntity] = Field(default_factory=list)
     relationships: list[ExtractedRelationship] = Field(default_factory=list)
     source_url: str = Field(description="The URL of the source document")
-    extracted_at: datetime = Field(default_factory=datetime.utcnow)
+    extracted_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 def _configure_genai() -> None:

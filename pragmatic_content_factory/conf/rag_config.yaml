@@ -26,4 +26,7 @@ paths:
   index_dir: "data/faiss_index"
   # Name of the index file (without extension)
   index_name: "pcf-constitutional"
+  # Dynamic documents managed by the Librarian
+  taboo_list: "data/dynamic/taboo_list.md"
+  style_adjustments: "data/dynamic/style_adjustments.md"
 

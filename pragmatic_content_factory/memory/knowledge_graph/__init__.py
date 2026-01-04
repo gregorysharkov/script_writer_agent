@@ -20,41 +20,33 @@ Usage:
     context = await query_worldview("MLOps")
 """
 
-__all__ = []
-
 # Configuration models
-try:
-    from pragmatic_content_factory.memory.knowledge_graph.models import (
-        Neo4jConfig,
-        get_neo4j_config,
-    )
-
-    __all__.extend(["Neo4jConfig", "get_neo4j_config"])
-except ImportError:
-    pass
+from pragmatic_content_factory.memory.knowledge_graph.models import (
+    Neo4jConfig,
+    get_neo4j_config,
+)
 
 # Client and query functions
-try:
-    from pragmatic_content_factory.memory.knowledge_graph.neo4j_client import (
-        KnowledgeGraphClient,
-        StanceResult,
-        EntityContext,
-        WorldviewContext,
-        get_kg_client,
-        get_stance,
-        query_worldview,
-    )
+from pragmatic_content_factory.memory.knowledge_graph.neo4j_client import (
+    KnowledgeGraphClient,
+    StanceResult,
+    EntityContext,
+    WorldviewContext,
+    get_kg_client,
+    get_stance,
+    query_worldview,
+)
 
-    __all__.extend(
-        [
-            "KnowledgeGraphClient",
-            "StanceResult",
-            "EntityContext",
-            "WorldviewContext",
-            "get_kg_client",
-            "get_stance",
-            "query_worldview",
-        ]
-    )
-except ImportError:
-    pass
+__all__ = [
+    # Config
+    "Neo4jConfig",
+    "get_neo4j_config",
+    # Client
+    "KnowledgeGraphClient",
+    "StanceResult",
+    "EntityContext",
+    "WorldviewContext",
+    "get_kg_client",
+    "get_stance",
+    "query_worldview",
+]

@@ -1,8 +1,3 @@
-# Suppress gRPC ALTS warning (not running on GCP)
-import os
-
-os.environ["GRPC_VERBOSITY"] = "ERROR"
-
 """The Brain - Memory layer components for RAG and Knowledge Graph.
 
 This module provides access to the two memory layers:
@@ -24,33 +19,39 @@ Usage:
     result = await retrieve("voice tone guidelines", top_k=5)
 """
 
-__all__ = []
+# Suppress gRPC ALTS warning (not running on GCP)
+import os
 
 # RAG Constitutional Layer
-try:
-    from pragmatic_content_factory.memory.rag import (
-        RAGConfig,
-        RAGIndexer,
-        RAGRetriever,
-        get_retriever,
-        retrieve,
-    )
+from pragmatic_content_factory.memory.rag import (
+    RAGConfig,
+    RAGIndexer,
+    RAGRetriever,
+    get_retriever,
+    retrieve,
+)
 
-    __all__.extend(
-        [
-            "RAGConfig",
-            "RAGIndexer",
-            "RAGRetriever",
-            "get_retriever",
-            "retrieve",
-        ]
-    )
-except ImportError:
-    pass
+# Knowledge Graph Worldview Layer
+from pragmatic_content_factory.memory.knowledge_graph import (
+    KnowledgeGraphClient,
+    get_kg_client,
+    get_stance,
+    query_worldview,
+)
 
-# Knowledge Graph Worldview Layer (not yet implemented)
-# try:
-#     from pragmatic_content_factory.memory.knowledge_graph import kg_client
-#     __all__.append("kg_client")
-# except ImportError:
-#     pass
+__all__ = [
+    # RAG
+    "RAGConfig",
+    "RAGIndexer",
+    "RAGRetriever",
+    "get_retriever",
+    "retrieve",
+    # Knowledge Graph
+    "KnowledgeGraphClient",
+    "get_kg_client",
+    "get_stance",
+    "query_worldview",
+]
+
+# Suppress gRPC ALTS warning (not running on GCP)
+os.environ["GRPC_VERBOSITY"] = "ERROR"

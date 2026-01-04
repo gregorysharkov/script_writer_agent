@@ -3,7 +3,7 @@
 import asyncio
 import hashlib
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import json
@@ -224,13 +224,18 @@ class RAGIndexer:
         """Get the indexed chunks."""
         return self._chunks
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Private helpers: Manifest & Metadata I/O
+    # ─────────────────────────────────────────────────────────────────────────
+
     def _load_manifest(self) -> Optional[IndexManifest]:
         """Load the index manifest if it exists."""
         return IndexManifest.load(self._manifest_path)
 
-    def _save_manifest(self, manifest: IndexManifest) -> None:
-        """Save the index manifest."""
-        manifest.save(self._manifest_path)
+    def _save_manifest(self) -> None:
+        """Save the current manifest to disk."""
+        if self._manifest is not None:
+            self._manifest.save(self._manifest_path)
 
     def _save_metadata(self) -> None:
         """Save chunk metadata to JSON."""
@@ -246,7 +251,6 @@ class RAGIndexer:
 
     def _load_metadata(self) -> list[DocumentChunk]:
         """Load chunk metadata from JSON."""
-
         if not self._metadata_path.exists():
             return []
 
@@ -254,6 +258,108 @@ class RAGIndexer:
             metadata = json.load(f)
 
         return [DocumentChunk(**chunk) for chunk in metadata]
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Private helpers: Embedding & FAISS operations
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def _generate_normalized_embeddings(self, texts: list[str]) -> np.ndarray:
+        """Generate embeddings for texts and normalize for cosine similarity.
+
+        Args:
+            texts: List of texts to embed.
+
+        Returns:
+            Normalized embeddings array of shape (len(texts), embedding_dim).
+        """
+        embeddings = await _generate_embeddings(
+            texts,
+            model=self.config.embedding.model,
+            batch_size=self.config.embedding.batch_size,
+        )
+        faiss.normalize_L2(embeddings)
+        return embeddings
+
+    def _create_faiss_index(self, embeddings: np.ndarray) -> faiss.IndexFlatIP:
+        """Create a new FAISS index from embeddings.
+
+        Args:
+            embeddings: Normalized embeddings array.
+
+        Returns:
+            New FAISS IndexFlatIP instance with embeddings added.
+        """
+        dimension = embeddings.shape[1]
+        index = faiss.IndexFlatIP(dimension)
+        index.add(embeddings.shape[0], embeddings)
+        return index
+
+    def _ensure_index_initialized(self) -> None:
+        """Ensure index state is initialized (load existing or create empty).
+
+        Attempts to load existing index. If not found, initializes empty state.
+        """
+        if self._index is not None:
+            return
+
+        if self.load_index():
+            return
+
+        # Initialize empty state for fresh index
+        logger.info("Initializing empty index state")
+        self._chunks = []
+        self._manifest = self._create_empty_manifest()
+
+    def _create_empty_manifest(self) -> IndexManifest:
+        """Create a new empty manifest with current config."""
+        return IndexManifest(
+            created_at=datetime.now(timezone.utc),
+            config_hash=self.config.get_config_hash(),
+            embedding_model=self.config.embedding.model,
+            documents={},
+            total_chunks=0,
+        )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Private helpers: Save & Update operations
+    # ─────────────────────────────────────────────────────────────────────────
+
+    def _save_all_components(self) -> None:
+        """Save FAISS index, chunk metadata, and manifest to disk."""
+        self.save_index()
+        self._save_manifest()
+
+    def _update_manifest_for_source(
+        self,
+        source_file: str,
+    ) -> None:
+        """Update manifest with document info for a source file.
+
+        Args:
+            source_file: Relative path to source file from base path.
+        """
+        if self._manifest is None:
+            return
+
+        source_path = self._base_path / source_file
+        if not source_path.exists():
+            return
+
+        file_hash = _compute_file_hash(source_path)
+        source_chunk_count = sum(
+            1 for c in self._chunks if c.source_file == source_file
+        )
+
+        self._manifest.documents[source_file] = DocumentInfo(
+            file_hash=file_hash,
+            chunk_count=source_chunk_count,
+            original_language="en",  # Assume English for dynamic docs
+            indexed_at=datetime.now(timezone.utc),
+        )
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Public API: Index I/O
+    # ─────────────────────────────────────────────────────────────────────────
 
     def save_index(self) -> None:
         """Save the FAISS index to disk."""
@@ -297,12 +403,16 @@ class RAGIndexer:
             logger.error("Failed to load index", error=str(e))
             return False
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # Public API: Index building
+    # ─────────────────────────────────────────────────────────────────────────
+
     async def build_index(
         self,
         chunks: list[DocumentChunk],
         document_infos: dict[str, DocumentInfo],
     ) -> None:
-        """Build FAISS index from document chunks.
+        """Build FAISS index from document chunks (full rebuild).
 
         Args:
             chunks: List of document chunks to index.
@@ -314,42 +424,30 @@ class RAGIndexer:
 
         logger.info("Building FAISS index", chunk_count=len(chunks))
 
-        # Extract texts for embedding
+        # Generate normalized embeddings
         texts = [chunk.text for chunk in chunks]
+        embeddings = await self._generate_normalized_embeddings(texts)
 
-        # Generate embeddings
-        embeddings = await _generate_embeddings(
-            texts,
-            model=self.config.embedding.model,
-            batch_size=self.config.embedding.batch_size,
-        )
-
-        # Normalize embeddings for cosine similarity (using inner product)
-        faiss.normalize_L2(embeddings)
-
-        # Create FAISS index
-        dimension = embeddings.shape[1]
-        self._index = faiss.IndexFlatIP(dimension)
-        self._index.add(embeddings)
+        # Create FAISS index and store chunks
+        self._index = self._create_faiss_index(embeddings)
         self._chunks = chunks
 
         # Create manifest
         self._manifest = IndexManifest(
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
             config_hash=self.config.get_config_hash(),
             embedding_model=self.config.embedding.model,
             documents=document_infos,
             total_chunks=len(chunks),
         )
 
-        # Save everything
-        self.save_index()
-        self._save_manifest(self._manifest)
+        # Save all components
+        self._save_all_components()
 
         logger.info(
             "Index built successfully",
             vectors=self._index.ntotal,
-            dimension=dimension,
+            dimension=embeddings.shape[1],
         )
 
     def check_needs_rebuild(
@@ -387,6 +485,153 @@ class RAGIndexer:
 
         # Check against manifest
         return manifest.needs_rebuild(current_config_hash, current_docs)
+
+    async def add_chunks(
+        self,
+        new_chunks: list[DocumentChunk],
+        source_file: Optional[str] = None,
+    ) -> int:
+        """Add new chunks incrementally to the existing index.
+
+        This method appends new chunks without rebuilding the entire index.
+        All RAG components are updated: FAISS index, chunk metadata, and manifest.
+
+        Args:
+            new_chunks: List of new DocumentChunk objects to add.
+            source_file: Optional source file path for manifest update.
+
+        Returns:
+            Number of chunks added.
+        """
+        if not new_chunks:
+            logger.warning("No chunks to add")
+            return 0
+
+        # Ensure index state is ready (load existing or initialize empty)
+        self._ensure_index_initialized()
+
+        logger.info("Adding chunks incrementally", new_chunk_count=len(new_chunks))
+
+        # Generate normalized embeddings
+        texts = [chunk.text for chunk in new_chunks]
+        embeddings = await self._generate_normalized_embeddings(texts)
+
+        # Create index if needed, then add embeddings
+        if self._index is None:
+            self._index = self._create_faiss_index(embeddings)
+        else:
+            self._index.add(embeddings.shape[0], embeddings)
+
+        # Extend chunk metadata
+        self._chunks.extend(new_chunks)
+
+        # Update manifest
+        if self._manifest is None:
+            self._manifest = self._create_empty_manifest()
+
+        self._manifest.total_chunks = len(self._chunks)
+        self._manifest.updated_at = datetime.now(timezone.utc)
+
+        if source_file:
+            self._update_manifest_for_source(source_file)
+
+        # Save all components
+        self._save_all_components()
+
+        logger.info(
+            "Chunks added successfully",
+            chunks_added=len(new_chunks),
+            total_chunks=len(self._chunks),
+            total_vectors=self._index.ntotal,
+        )
+
+        return len(new_chunks)
+
+    def _insert_into_section(
+        self,
+        existing_content: str,
+        content: str,
+        section: str,
+    ) -> str:
+        """Insert content into a specific section of a markdown document.
+
+        Args:
+            existing_content: The current document content.
+            content: Content to insert.
+            section: Section name (without ## prefix).
+
+        Returns:
+            Updated document content.
+        """
+        section_marker = f"## {section}"
+
+        # Section doesn't exist - append new section at end
+        if section_marker not in existing_content:
+            return f"{existing_content.rstrip()}\n\n{section_marker}\n{content}\n"
+
+        # Find section boundaries
+        section_start = existing_content.index(section_marker)
+        next_section = existing_content.find("\n## ", section_start + 1)
+        section_end = next_section if next_section != -1 else len(existing_content)
+
+        # Insert content at end of section
+        return (
+            existing_content[:section_end].rstrip()
+            + f"\n{content}\n"
+            + existing_content[section_end:]
+        )
+
+    def add_to_dynamic_document(
+        self,
+        document_path: str,
+        content: str,
+        section: Optional[str] = None,
+    ) -> bool:
+        """Append content to a dynamic document (markdown file).
+
+        This helper method appends new content to dynamic documents like
+        taboo_list.md or style_adjustments.md.
+
+        Args:
+            document_path: Relative path to the document from base path.
+            content: Content to append.
+            section: Optional section header to append under.
+
+        Returns:
+            True if successful, False otherwise.
+        """
+        full_path = self._base_path / document_path
+
+        if not full_path.exists():
+            logger.warning("Document not found", path=str(full_path))
+            return False
+
+        try:
+            existing_content = full_path.read_text(encoding="utf-8")
+
+            if section:
+                new_content = self._insert_into_section(
+                    existing_content, content, section
+                )
+            else:
+                new_content = f"{existing_content.rstrip()}\n{content}\n"
+
+            full_path.write_text(new_content, encoding="utf-8")
+
+            logger.info(
+                "Added content to dynamic document",
+                path=document_path,
+                section=section,
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                "Failed to add content to document",
+                path=document_path,
+                error=str(e),
+            )
+            return False
 
 
 # Convenience function for creating indexer
