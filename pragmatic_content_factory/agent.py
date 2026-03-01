@@ -4,7 +4,7 @@ This module defines the main agent pipeline using Google ADK's
 SequentialAgent pattern for orchestrating the content generation flow.
 
 Current Pipeline:
-    Input → Deep Analyst → [Content Brief] → Librarian → [Memory Updates]
+    Input → Deep Analyst → [Content Brief] → Voice Architect → [Draft Script] → Librarian → [Memory Updates]
 
 Future Pipeline:
     Input → Deep Analyst → [CP1] → Voice Architect → [CP2] →
@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from google.adk.agents import SequentialAgent
 
 from pragmatic_content_factory.agents.deep_analyst import deep_analyst
+from pragmatic_content_factory.agents.voice_architect import voice_architect
 from pragmatic_content_factory.agents.librarian import librarian
 
 load_dotenv()
@@ -36,8 +37,13 @@ specialized agents that each perform a specific task.
    - Produces: Structured Content Brief
    - Queries Knowledge Graph for worldview context
 
-2. **Librarian** (Memory Manager)
-   - Receives: Content Brief and user feedback
+2. **Voice Architect** (The Ghostwriter)
+   - Receives: Content Brief from Deep Analyst
+   - Produces: Draft Script following brand voice and style
+   - Queries RAG Constitutional Layer for style rules, brand voice, and taboo terms
+
+3. **Librarian** (Memory Manager)
+   - Receives: Draft Script and user feedback
    - Analyzes for learning signals (URLs, stances, taboo terms, style preferences)
    - Updates Knowledge Graph and RAG index as needed
    - Uses confidence-based actions: auto-stores HIGH, confirms MEDIUM
@@ -46,11 +52,13 @@ specialized agents that each perform a specific task.
 
 When you receive raw input:
 1. Pass it to the Deep Analyst
-2. The analyst will query the Knowledge Graph for relevant worldview context
-3. The analyst produces a structured Content Brief
-4. The Content Brief is stored in context as 'content_brief'
-5. The Librarian analyzes the messages and user feedback for learning signals
-6. The Librarian updates memory (KG/RAG) based on detected signals
+2. The analyst queries the Knowledge Graph for relevant worldview context
+3. The analyst produces a structured Content Brief (stored as 'content_brief')
+4. The Voice Architect receives the Content Brief
+5. The architect queries RAG for style rules, brand voice, and taboo terms
+6. The architect produces a Draft Script (stored as 'draft_script')
+7. The Librarian analyzes the messages and user feedback for learning signals
+8. The Librarian updates memory (KG/RAG) based on detected signals
 
 ## Input Format
 
@@ -72,6 +80,12 @@ The pipeline produces:
 - Worldview context from Knowledge Graph
 - Suggested angle and analyst notes
 
+**From Voice Architect:**
+- Complete draft script with hook, introduction, sections, and conclusion
+- Quotable lines for social sharing
+- Style rules applied
+- Tone notes and writer observations
+
 **From Librarian:**
 - Memory updates performed (entities, relationships, taboo terms, style adjustments)
 - Pending confirmations for MEDIUM confidence items
@@ -87,7 +101,6 @@ The Librarian detects and processes:
 
 ## Future Agents (Coming Soon)
 
-- **Voice Architect**: Will take Content Brief and produce Draft Script
 - **Ruthless Critic**: Will validate drafts against brand rules
 - **Atomizer**: Will create platform-specific content from final script
 
@@ -106,14 +119,15 @@ root_agent = SequentialAgent(
     name="pragmatic_content_factory",
     description=(
         "Content generation pipeline for the Pragmatic Architect brand. "
-        "Analyzes raw input, produces structured content briefs, and "
-        "updates memory based on user feedback and content analysis."
+        "Analyzes raw input, produces structured content briefs, generates "
+        "draft scripts following brand voice, and updates memory based on "
+        "user feedback and content analysis."
     ),
     sub_agents=[
         deep_analyst,
+        voice_architect,
         librarian,
         # Future agents will be added here:
-        # voice_architect,
         # ruthless_critic,
         # atomizer,
     ],

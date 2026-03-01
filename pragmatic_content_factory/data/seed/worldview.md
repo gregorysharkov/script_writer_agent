@@ -10,9 +10,10 @@ Links to content that defines the brand's worldview and stances.
 ## Videos & Podcasts
 - https://youtu.be/CvQ7e6yUtnw | title: "This Is Why Python Data Classes Are Awesome"
 - https://youtu.be/FPZONhA0C60 | title: "GPT Engineer: Things Are Starting to Get Weird"
+- https://www.youtube.com/watch?v=h7dbkDcb3hA | Task Queues Are Replacing Chat Interfaces. Here's Why (plus a Claude Cowork Demo)
 
 ## Social Posts
-
+https://www.linkedin.com/posts/sokratis-kartakis_talktodata-nl2sql-ai-share-7415582536816611328-17Fg
 
 ## Technical Writing
 - https://assets.new.siemens.com/siemens/assets/api/uuid:3b4de373-57e2-4329-b025-2825db0172aa/WhitepaperXAI.pdf | category: engineering

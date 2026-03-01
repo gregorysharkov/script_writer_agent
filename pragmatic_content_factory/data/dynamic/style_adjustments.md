@@ -37,3 +37,7 @@ A chronological log of tone and style changes based on feedback and evolving bra
 ---
 
 *Managed by: Librarian Agent*
+
+### [2026-01-05]
+- Avoid phrases like "Master the fundamentals" as it sounds too "GenAI" and unnatural. Prefer direct alternatives like "Get the basics right."
+  *Context: General tone for technical explanations*

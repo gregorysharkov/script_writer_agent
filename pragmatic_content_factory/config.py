@@ -66,6 +66,74 @@ class BrandInfo:
 
 
 @dataclass
+class HookType:
+    """Definition of a hook type for content opening."""
+
+    name: str
+    description: str
+    example: str
+
+
+@dataclass
+class VoiceArchitectConfig:
+    """Configuration for the Voice Architect agent."""
+
+    # Hook types available for content creation
+    hook_types: list[HookType] = field(
+        default_factory=lambda: [
+            HookType(
+                name="question",
+                description="Opens with a provocative question that resonates with audience pain",
+                example="Why does every LLM app end up with 10x the code it needs?",
+            ),
+            HookType(
+                name="statistic",
+                description="Opens with a surprising or compelling data point",
+                example="73% of ML projects never make it to production. Here's why.",
+            ),
+            HookType(
+                name="story",
+                description="Opens with a relatable personal anecdote",
+                example="Last week I spent 4 hours debugging a LangChain chain. The fix was 3 lines.",
+            ),
+            HookType(
+                name="contrarian",
+                description="Opens with a stance that challenges conventional wisdom",
+                example="Everyone's building with LangChain. Here's why I'm not.",
+            ),
+            HookType(
+                name="pain_point",
+                description="Opens by directly naming a frustration the audience feels",
+                example="You know that feeling when your 'simple' LLM wrapper turns into 2000 lines of framework code?",
+            ),
+        ]
+    )
+
+    # Target emotions hooks can aim for
+    target_emotions: list[str] = field(
+        default_factory=lambda: [
+            "curiosity",
+            "frustration",
+            "hope",
+            "recognition",
+            "surprise",
+        ]
+    )
+
+    def get_hook_type_names(self) -> list[str]:
+        """Get list of valid hook type names."""
+        return [h.name for h in self.hook_types]
+
+    def format_hook_types_for_prompt(self) -> str:
+        """Format hook types as markdown for agent instruction."""
+        lines = ["Hook Types:"]
+        for hook in self.hook_types:
+            lines.append(f'- **{hook.name.title()}**: "{hook.example}"')
+            lines.append(f"  {hook.description}")
+        return "\n".join(lines)
+
+
+@dataclass
 class PipelineConfig:
     """Configuration for the content pipeline."""
 
@@ -89,6 +157,7 @@ class PCFConfig:
     rag: RAGConfig = field(default_factory=RAGConfig)
     brand: BrandInfo = field(default_factory=BrandInfo)
     pipeline: PipelineConfig = field(default_factory=PipelineConfig)
+    voice_architect: VoiceArchitectConfig = field(default_factory=VoiceArchitectConfig)
 
     # LLM settings
     main_model: str = "gemini-2.5-flash"
@@ -105,6 +174,7 @@ class PCFConfig:
             rag=RAGConfig(),
             brand=BrandInfo(),
             pipeline=PipelineConfig(),
+            voice_architect=VoiceArchitectConfig(),
             main_model=os.getenv("PCF_MODEL", "gemini-2.5-flash"),
         )
 

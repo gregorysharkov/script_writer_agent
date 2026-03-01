@@ -2,10 +2,10 @@
 
 This module provides structured data models for the PCF pipeline:
 - ContentBrief: Output of Deep Analyst, input to Voice Architect
+- DraftScript: Output of Voice Architect, input to Ruthless Critic
 - Librarian models: Memory management data structures
 
 Future models (not yet implemented):
-- Draft: Output of Voice Architect, input to Ruthless Critic
 - Critique: Output of Ruthless Critic
 - SocialPosts: Output of Atomizer
 - UserFeedback: User feedback at checkpoints
@@ -19,6 +19,17 @@ from pragmatic_content_factory.models.content_brief import (
     SocialCurrency,
     WorldviewAlignment,
     AudiencePainPoint,
+)
+
+# Draft Script (Voice Architect output)
+from pragmatic_content_factory.models.draft_script import (
+    DraftScript,
+    ScriptSection,
+    Hook,
+    CallToAction,
+    ContentFormat,
+    HookType,
+    TargetEmotion,
 )
 
 # Librarian models (memory management)
@@ -40,6 +51,14 @@ __all__ = [
     "SocialCurrency",
     "WorldviewAlignment",
     "AudiencePainPoint",
+    # Draft Script
+    "DraftScript",
+    "ScriptSection",
+    "Hook",
+    "CallToAction",
+    "ContentFormat",
+    "HookType",
+    "TargetEmotion",
     # Librarian models
     "MemoryCandidate",
     "MemoryCandidateType",

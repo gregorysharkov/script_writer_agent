@@ -15,6 +15,7 @@ Prohibited phrases, clichés, and hype terms that should never appear in content
 - "10x" (without concrete data)
 - "magic"
 - "seamlessly"
+- "master the basics"
 
 ## Overused Clichés
 
@@ -24,6 +25,7 @@ Prohibited phrases, clichés, and hype terms that should never appear in content
 - "Low-hanging fruit"
 - "Move the needle"
 - "Circle back"
+- "churn"
 
 ## Emotional Language (Replace with Concrete)
 
