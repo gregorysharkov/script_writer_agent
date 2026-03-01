@@ -125,12 +125,15 @@ class ResultsAggregator(BaseAgent):
         ]
 
         for i, analysis in enumerate(analyses, 1):
+            assessment = analysis.get('overall_assessment', 'N/A')
+            truncated = assessment[:200]
+            ellipsis = "..." if len(assessment) > 200 else ""
             summary_parts.append(
                 f"\n### {i}. {analysis.get('location_name', 'Unknown')}\n"
                 f"- **Address:** {analysis.get('address', 'N/A')}\n"
                 f"- **Type:** {analysis.get('place_type', 'N/A')}\n"
                 f"- **Confidence:** {analysis.get('confidence_score', 0):.0%}\n"
-                f"- **Assessment:** {analysis.get('overall_assessment', 'N/A')[:200]}...\n"
+                f"- **Assessment:** {truncated}{ellipsis}\n"
             )
 
         summary = "".join(summary_parts)
